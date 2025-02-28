@@ -1,0 +1,54 @@
+name: Docker Build and Test
+
+on:
+  push:
+    branches:
+      - main  # Change this to your default branch if necessary
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Build Frontend Docker image
+        run: |
+          docker build -t merchandise-inventory-frontend ./Frontend
+
+      - name: Run Frontend Docker container
+        run: |
+          docker run -d -p 8080:80 --name my-react-app merchandise-inventory-frontend
+          sleep 10  # Give the container some time to start
+
+      - name: Check if the Frontend app is running
+        run: |
+          curl --fail http://localhost:8080 || exit 1
+
+      - name: Stop and remove the Frontend container
+        run: |
+          docker stop my-react-app
+          docker rm my-react-app
+
+      - name: Build Backend Docker image
+        run: |
+          docker build -t merchandise-inventory-backend ./Backend
+
+      - name: Run Backend Docker container
+        run: |
+          docker run -d -p 8000:8000 --name my-fastapi-app merchandise-inventory-backend
+          sleep 10  # Give the container some time to start
+
+      - name: Check if the Backend app is running
+        run: |
+          curl --fail http://localhost:8000 || exit 1
+
+      - name: Stop and remove the Backend container
+        run: |
+          docker stop my-fastapi-app
+          docker rm my-fastapi-app
